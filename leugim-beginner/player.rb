@@ -7,6 +7,8 @@ class Player
 
     if warrior.feel.wall?
       warrior.pivot!
+    elsif enemy_ahead?(warrior)
+      warrior.shoot!
     elsif should_run_away?(warrior)
       warrior.walk!(:backward)
     elsif should_rest?(warrior)
@@ -20,6 +22,17 @@ class Player
     end
 
     @last_health = warrior.health
+  end
+
+  def enemy_ahead?(warrior)
+    for space in warrior.look
+      if space.captive?
+        return false
+      elsif space.enemy?
+        return true
+      end
+    end
+    return false
   end
 
   def should_run_away?(warrior)
