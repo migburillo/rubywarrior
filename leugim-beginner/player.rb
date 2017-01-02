@@ -1,11 +1,13 @@
 class Player
-  MIN_HP = 12
+  MIN_HP = 14
 
   def play_turn(warrior)
     @last_health = 20 unless @last_health
 
     if should_rest?(warrior)
       warrior.rest!
+    elsif warrior.feel.captive?
+      warrior.rescue!
     elsif not warrior.feel.empty?
       warrior.attack!
     else
