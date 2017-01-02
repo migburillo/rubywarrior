@@ -4,28 +4,26 @@ class Player
 
   def play_turn(warrior)
     @last_health = 20 unless @last_health
-    @direction = :backward unless @direction
 
-    if should_run_away?(warrior)
+    if warrior.feel.wall?
+      warrior.pivot!
+    elsif should_run_away?(warrior)
       warrior.walk!(:backward)
     elsif should_rest?(warrior)
       warrior.rest!
-    elsif warrior.feel(@direction).captive?
-      warrior.rescue!((@direction))
-    elsif warrior.feel(@direction).enemy?
-      warrior.attack!((@direction))
-    elsif warrior.feel(@direction).wall?
-      @direction = :forward
-      warrior.walk!(@direction)
-    elsif warrior.feel(@direction).empty?
-      warrior.walk!(@direction)
+    elsif warrior.feel.captive?
+      warrior.rescue!
+    elsif warrior.feel.enemy?
+      warrior.attack!
+    elsif warrior.feel.empty?
+      warrior.walk!
     end
 
     @last_health = warrior.health
   end
 
   def should_run_away?(warrior)
-      return (warrior.health < RUN_HP and taking_damage?(warrior))
+      return (warrior.health < RUN_HP and taking_damage?(warrior) and warrior.feel.empty?)
   end
 
   def should_rest?(warrior)
