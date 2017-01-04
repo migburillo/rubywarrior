@@ -1,5 +1,5 @@
 class Player
-  MIN_HP = 10
+  MIN_HP = 14
   DIRECTIONS = [:left, :right, :forward, :backward]
   @last_health
 
@@ -14,6 +14,8 @@ class Player
       warrior.attack!(direction)
     elsif direction = captives_around?(warrior)
       warrior.rescue!(direction)
+    elsif units = warrior.listen and units.count > 0
+      warrior.walk!(warrior.direction_of(units.first))
     elsif warrior.feel(warrior.direction_of_stairs).enemy?
       warrior.attack!(warrior.direction_of_stairs)
     else
