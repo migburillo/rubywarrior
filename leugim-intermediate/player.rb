@@ -8,6 +8,12 @@ class Player
 
     if not taking_damage?(warrior) and should_rest?(warrior)
       warrior.rest!
+    elsif unit = get_ticking_in_room(warrior)
+      if direction = captives_around?(warrior)
+        warrior.rescue!(direction)
+      else
+        warrior.walk!(get_direction_to_unit(warrior, unit))
+      end
     elsif direction = surrounded?(warrior)
       warrior.bind!(direction)
     elsif direction = enemy_around?(warrior)
@@ -24,15 +30,36 @@ class Player
     @last_health = warrior.health
   end
 
+  def get_ticking_in_room(warrior)
+    units = warrior.listen
+    for unit in units
+      if unit.ticking?
+        return unit
+      end
+    end
+    return false
+  end
+
   def get_direction_to_unit(warrior, unit)
     direction = warrior.direction_of(unit)
-    if warrior.feel(direction).stairs?
-      directions = Array.new(DIRECTIONS)
-      directions.delete(direction)
-      return directions.first
+    if warrior.feel(direction).stairs? or not warrior.feel(direction).empty?
+      return get_alternative_direction(warrior, direction)
     else
       return direction
     end
+  end
+
+  def get_alternative_direction(warrior, direction)
+    if direction == :left or direction == :right
+      if warrior.feel(:forward).empty?
+        return :forward
+      end
+        return :backward
+    end
+    if warrior.feel(:left).empty?
+      return :left
+    end
+      return :right
   end
 
   def surrounded?(warrior)
