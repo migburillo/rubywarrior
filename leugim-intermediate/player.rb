@@ -1,5 +1,5 @@
 class Player
-  MIN_HP = 14
+  MIN_HP = 16
   DIRECTIONS = [:left, :right, :forward, :backward]
   @last_health
 
@@ -15,13 +15,24 @@ class Player
     elsif direction = captives_around?(warrior)
       warrior.rescue!(direction)
     elsif units = warrior.listen and units.count > 0
-      warrior.walk!(warrior.direction_of(units.first))
+      warrior.walk!(get_direction_to_unit(warrior, units.first))
     elsif warrior.feel(warrior.direction_of_stairs).enemy?
       warrior.attack!(warrior.direction_of_stairs)
     else
       warrior.walk!(warrior.direction_of_stairs)
     end
     @last_health = warrior.health
+  end
+
+  def get_direction_to_unit(warrior, unit)
+    direction = warrior.direction_of(unit)
+    if warrior.feel(direction).stairs?
+      directions = Array.new(DIRECTIONS)
+      directions.delete(direction)
+      return directions.first
+    else
+      return direction
+    end
   end
 
   def surrounded?(warrior)
@@ -56,11 +67,11 @@ class Player
   end
 
   def taking_damage?(warrior)
-      return @last_health > warrior.health
+    return @last_health > warrior.health
   end
 
   def should_rest?(warrior)
-      return warrior.health < MIN_HP
+    return warrior.health < MIN_HP
   end
 
 end
