@@ -1,5 +1,6 @@
 class Player
   MIN_HP = 14
+  DMG_BOMB = 4
   DIRECTIONS = [:forward, :backward, :left, :right]
   @last_health
 
@@ -8,14 +9,14 @@ class Player
 
     if direction = ticking_around?(warrior)
       warrior.rescue!(direction)
-    elsif unit = get_ticking_in_room(warrior) and direction = get_direction_to_unit(warrior, unit)
-      warrior.walk!(direction)
-    elsif not taking_damage?(warrior) and should_rest?(warrior)
+    elsif should_rest?(warrior)
       warrior.rest!
-    elsif enemies_ahead?(warrior)
-      warrior.detonate!
     elsif direction = surrounded?(warrior)
       warrior.bind!(direction)
+    elsif direction = should_detonate?(warrior)
+      warrior.detonate!(direction)
+    elsif unit = get_ticking_in_room(warrior) and direction = get_direction_to_unit(warrior, unit)
+      warrior.walk!(direction)
     elsif direction = enemy_around?(warrior)
       warrior.attack!(direction)
     elsif direction = captives_around?(warrior)
@@ -30,10 +31,17 @@ class Player
     @last_health = warrior.health
   end
 
-  def enemies_ahead?(warrior)
-    spaces = warrior.look
-    puts spaces.count
-    return (spaces[0].enemy? and spaces[1].enemy?)
+  def should_detonate?(warrior)
+    if warrior.health <= DMG_BOMB
+      return false
+    end
+    for direction in DIRECTIONS
+      spaces = warrior.look(direction)
+      if (spaces[0].enemy? or spaces[1].enemy?) and not ticking_near?(warrior)
+         return direction
+      end
+    end
+    return false
   end
 
   def get_ticking_in_room(warrior)
@@ -48,10 +56,12 @@ class Player
 
   def get_direction_to_unit(warrior, unit)
     direction = warrior.direction_of(unit)
-    if warrior.feel(direction).stairs? or not warrior.feel(direction).empty?
+    if warrior.feel(direction).stairs?
       return get_alternative_direction(warrior, direction)
-    else
+    elsif warrior.feel(direction).empty?
       return direction
+    else
+      return false
     end
   end
 
@@ -112,15 +122,32 @@ class Player
     return false
   end
 
+  def ticking_near?(warrior)
+    units = warrior.listen
+    for unit in units
+      if (unit.ticking? and warrior.distance_of(unit) <= 2)
+        return true
+      end
+    end
+    return false
+  end
+
   def taking_damage?(warrior)
     return @last_health > warrior.health
+  end
+
+  def last_damage_received(warrior)
+      return @last_health - warrior.health
   end
 
   def should_rest?(warrior)
     if warrior.listen.count == 0
       return false
     end
-    return warrior.health < MIN_HP
+    if (not taking_damage?(warrior) or last_damage_received(warrior) == DMG_BOMB)
+      return warrior.health < MIN_HP
+    end
+    return false
   end
 
 end
