@@ -1,14 +1,21 @@
 class Player
-  MIN_HP = 16
+  MIN_HP = 14
   RUN_HP = 10
+  @pivoted = false
 
   def play_turn(warrior)
     @last_health = 20 unless @last_health
 
     if warrior.feel.wall?
+        warrior.pivot!
+    elsif archer_backwards?(warrior)
+      @pivoted = true
       warrior.pivot!
     elsif enemy_ahead?(warrior)
       warrior.shoot!
+    elsif @pivoted
+      @pivoted = false
+      warrior.pivot!
     elsif should_run_away?(warrior)
       warrior.walk!(:backward)
     elsif should_rest?(warrior)
@@ -22,6 +29,21 @@ class Player
     end
 
     @last_health = warrior.health
+  end
+
+  def archer_backwards?(warrior)
+    for space in warrior.look(:backward)
+      if space.empty?
+        next
+      elsif space.captive?
+        return false
+      elsif (space.enemy? and space.to_s == "Archer")
+        return true
+      else
+        return false
+      end
+    end
+    return false
   end
 
   def enemy_ahead?(warrior)
