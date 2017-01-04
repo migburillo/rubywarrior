@@ -12,6 +12,8 @@ class Player
       warrior.walk!(direction)
     elsif not taking_damage?(warrior) and should_rest?(warrior)
       warrior.rest!
+    elsif enemies_ahead?(warrior)
+      warrior.detonate!
     elsif direction = surrounded?(warrior)
       warrior.bind!(direction)
     elsif direction = enemy_around?(warrior)
@@ -26,6 +28,12 @@ class Player
       warrior.walk!(warrior.direction_of_stairs)
     end
     @last_health = warrior.health
+  end
+
+  def enemies_ahead?(warrior)
+    spaces = warrior.look
+    puts spaces.count
+    return (spaces[0].enemy? and spaces[1].enemy?)
   end
 
   def get_ticking_in_room(warrior)
