@@ -1,19 +1,17 @@
 class Player
-  MIN_HP = 16
-  DIRECTIONS = [:left, :right, :forward, :backward]
+  MIN_HP = 14
+  DIRECTIONS = [:forward, :backward, :left, :right]
   @last_health
 
   def play_turn(warrior)
     @last_health = 20 unless @last_health
 
-    if not taking_damage?(warrior) and should_rest?(warrior)
+    if direction = ticking_around?(warrior)
+      warrior.rescue!(direction)
+    elsif unit = get_ticking_in_room(warrior) and direction = get_direction_to_unit(warrior, unit)
+      warrior.walk!(direction)
+    elsif not taking_damage?(warrior) and should_rest?(warrior)
       warrior.rest!
-    elsif unit = get_ticking_in_room(warrior)
-      if direction = captives_around?(warrior)
-        warrior.rescue!(direction)
-      else
-        warrior.walk!(get_direction_to_unit(warrior, unit))
-      end
     elsif direction = surrounded?(warrior)
       warrior.bind!(direction)
     elsif direction = enemy_around?(warrior)
@@ -53,13 +51,17 @@ class Player
     if direction == :left or direction == :right
       if warrior.feel(:forward).empty?
         return :forward
-      end
+      elsif warrior.feel(:backward).empty?
         return :backward
+      end
+      return false
     end
     if warrior.feel(:left).empty?
       return :left
-    end
+    elsif warrior.feel(:right).empty?
       return :right
+    end
+    return false
   end
 
   def surrounded?(warrior)
@@ -84,6 +86,15 @@ class Player
     return false
   end
 
+  def ticking_around?(warrior)
+    for direction in DIRECTIONS
+      if warrior.feel(direction).ticking?
+        return direction
+      end
+    end
+    return false
+  end
+
   def captives_around?(warrior)
     for direction in DIRECTIONS
       if warrior.feel(direction).captive?
@@ -98,6 +109,9 @@ class Player
   end
 
   def should_rest?(warrior)
+    if warrior.listen.count == 0
+      return false
+    end
     return warrior.health < MIN_HP
   end
 
