@@ -1,5 +1,13 @@
 class Player
+  @direction
+
   def play_turn(warrior)
-    warrior.walk!(warrior.direction_of_stairs)
+    @direction = warrior.direction_of_stairs
+
+    if warrior.feel(@direction).empty?
+      warrior.walk!(@direction)
+    else
+      warrior.attack!(@direction)
+    end
   end
 end
